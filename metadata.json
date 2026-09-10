@@ -1,0 +1,6 @@
+{
+  "name": "Conciliação Bancária",
+  "description": "Aplicação de Mapa de Conciliação Bancária multi-empresa segundo o Sistema de Normalização Contabilística (SNC) de Portugal e auditoria com Inteligência Artificial.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
