@@ -6,21 +6,45 @@ const STORAGE_KEY_RECS_PREFIX = 'conciliacao_recs_local_v2_';
 const STORAGE_KEY_ACTIVE_EMPRESA = 'conciliacao_active_empresa_v2';
 const STORAGE_KEY_ACTIVE_REC = 'conciliacao_active_rec_v2';
 
+// Safe stringify that protects against cyclic references and recursion exceptions
+function safeStringify(value: any, space?: number): string {
+  const seen = new WeakSet();
+  return JSON.stringify(
+    value,
+    (_key, val) => {
+      if (typeof val === 'object' && val !== null) {
+        if (seen.has(val)) {
+          return undefined; // remove circular reference
+        }
+        seen.add(val);
+      }
+      return val;
+    },
+    space
+  );
+}
+
 export function getStoredEmpresas(): Empresa[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_EMPRESAS);
     if (!raw) {
       // Initialize with Portuguese demo company
       const initial = [DEMO_EMPRESA];
-      localStorage.setItem(STORAGE_KEY_EMPRESAS, JSON.stringify(initial));
-      saveStoredReconciliacao(DEMO_EMPRESA.id, DEMO_RECONCILIACAO);
+      localStorage.setItem(STORAGE_KEY_EMPRESAS, safeStringify(initial));
+      localStorage.setItem(
+        `${STORAGE_KEY_RECS_PREFIX}${DEMO_EMPRESA.id}`,
+        safeStringify([DEMO_RECONCILIACAO])
+      );
       return initial;
     }
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed) || parsed.length === 0) {
       const initial = [DEMO_EMPRESA];
-      localStorage.setItem(STORAGE_KEY_EMPRESAS, JSON.stringify(initial));
-      saveStoredReconciliacao(DEMO_EMPRESA.id, DEMO_RECONCILIACAO);
+      localStorage.setItem(STORAGE_KEY_EMPRESAS, safeStringify(initial));
+      localStorage.setItem(
+        `${STORAGE_KEY_RECS_PREFIX}${DEMO_EMPRESA.id}`,
+        safeStringify([DEMO_RECONCILIACAO])
+      );
       return initial;
     }
     return parsed;
@@ -32,7 +56,7 @@ export function getStoredEmpresas(): Empresa[] {
 
 export function setStoredEmpresas(empresas: Empresa[]): void {
   try {
-    localStorage.setItem(STORAGE_KEY_EMPRESAS, JSON.stringify(empresas));
+    localStorage.setItem(STORAGE_KEY_EMPRESAS, safeStringify(empresas));
   } catch (e) {
     console.error('Erro ao guardar empresas no localStorage:', e);
   }
@@ -101,7 +125,11 @@ export function getStoredReconciliacoes(empresaId: string): Reconciliacao[] {
     const raw = localStorage.getItem(`${STORAGE_KEY_RECS_PREFIX}${empresaId}`);
     if (!raw) {
       if (empresaId === DEMO_EMPRESA.id) {
-        saveStoredReconciliacao(empresaId, DEMO_RECONCILIACAO);
+        // Direct storage write to prevent circular function call loop
+        localStorage.setItem(
+          `${STORAGE_KEY_RECS_PREFIX}${empresaId}`,
+          safeStringify([DEMO_RECONCILIACAO])
+        );
         return [DEMO_RECONCILIACAO];
       }
       return [];
@@ -119,7 +147,20 @@ export function getStoredReconciliacoes(empresaId: string): Reconciliacao[] {
 export function saveStoredReconciliacao(empresaId: string, rec: Reconciliacao): void {
   if (!empresaId || !rec || !rec.id) return;
   try {
-    const list = getStoredReconciliacoes(empresaId);
+    // Read raw directly without calling getStoredReconciliacoes to break any recursion
+    let list: Reconciliacao[] = [];
+    const raw = localStorage.getItem(`${STORAGE_KEY_RECS_PREFIX}${empresaId}`);
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          list = parsed;
+        }
+      } catch {
+        list = [];
+      }
+    }
+
     const idx = list.findIndex((r) => r.id === rec.id);
 
     const updatedRec: Reconciliacao = {
@@ -134,7 +175,7 @@ export function saveStoredReconciliacao(empresaId: string, rec: Reconciliacao): 
     }
 
     list.sort((a, b) => b.id.localeCompare(a.id));
-    localStorage.setItem(`${STORAGE_KEY_RECS_PREFIX}${empresaId}`, JSON.stringify(list));
+    localStorage.setItem(`${STORAGE_KEY_RECS_PREFIX}${empresaId}`, safeStringify(list));
   } catch (e) {
     console.error('Erro ao guardar reconciliação no localStorage:', e);
   }
@@ -143,9 +184,20 @@ export function saveStoredReconciliacao(empresaId: string, rec: Reconciliacao): 
 export function deleteStoredReconciliacao(empresaId: string, recId: string): void {
   if (!empresaId || !recId) return;
   try {
-    const list = getStoredReconciliacoes(empresaId);
+    let list: Reconciliacao[] = [];
+    const raw = localStorage.getItem(`${STORAGE_KEY_RECS_PREFIX}${empresaId}`);
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          list = parsed;
+        }
+      } catch {
+        list = [];
+      }
+    }
     const filtered = list.filter((r) => r.id !== recId);
-    localStorage.setItem(`${STORAGE_KEY_RECS_PREFIX}${empresaId}`, JSON.stringify(filtered));
+    localStorage.setItem(`${STORAGE_KEY_RECS_PREFIX}${empresaId}`, safeStringify(filtered));
   } catch (e) {
     console.error('Erro ao eliminar reconciliação no localStorage:', e);
   }
@@ -203,7 +255,7 @@ export function exportBackupJson(): string {
     allData.reconciliacoes[emp.id] = getStoredReconciliacoes(emp.id);
   });
 
-  return JSON.stringify(allData, null, 2);
+  return safeStringify(allData, 2);
 }
 
 export function importBackupJson(jsonString: string): boolean {
@@ -216,7 +268,7 @@ export function importBackupJson(jsonString: string): boolean {
     if (parsed.reconciliacoes && typeof parsed.reconciliacoes === 'object') {
       Object.entries(parsed.reconciliacoes).forEach(([empId, recs]) => {
         if (Array.isArray(recs)) {
-          localStorage.setItem(`${STORAGE_KEY_RECS_PREFIX}${empId}`, JSON.stringify(recs));
+          localStorage.setItem(`${STORAGE_KEY_RECS_PREFIX}${empId}`, safeStringify(recs));
         }
       });
     }
