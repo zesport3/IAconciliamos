@@ -457,14 +457,6 @@ export const ReconciliarIAExcelModal: React.FC<ReconciliarIAExcelModalProps> = (
                     <Download className="w-3.5 h-3.5 text-emerald-700" />
                     Modelo Contabilidade (.xlsx)
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleCarregarDadosTeste}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 text-white rounded-lg text-xs font-semibold hover:bg-emerald-800 transition-colors shadow-xs cursor-pointer"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Preencher c/ Exemplo
-                  </button>
                 </div>
               </div>
 

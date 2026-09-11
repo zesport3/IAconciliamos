@@ -375,18 +375,6 @@ export default function App() {
               <span>100% Offline</span>
             </div>
 
-            {/* Always accessible Demo Button */}
-            <button
-              type="button"
-              onClick={handleLoadDemoData}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-300 bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-700/80 rounded-lg transition-colors shadow-2xs"
-              title="Carregar exemplo completo do SNC pronto a usar"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden sm:inline">Exemplo SNC</span>
-              <span className="sm:hidden">Exemplo</span>
-            </button>
-
             {/* Export JSON Backup */}
             <button
               type="button"
