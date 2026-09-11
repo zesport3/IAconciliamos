@@ -27,6 +27,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     setLoading(true);
 
     try {
+      if (!auth) {
+        setError('Serviço de autenticação indisponível neste ambiente. O modo local continua ativo.');
+        return;
+      }
       if (isRegister) {
         await createUserWithEmailAndPassword(auth, email, password);
       } else {
@@ -55,6 +59,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     setError(null);
     setLoading(true);
     try {
+      if (!auth) {
+        setError('Serviço de autenticação indisponível neste ambiente. O modo local continua ativo.');
+        return;
+      }
       await signInAnonymously(auth);
       onClose();
     } catch (err: any) {
